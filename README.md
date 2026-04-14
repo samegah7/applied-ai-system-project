@@ -53,9 +53,40 @@ All songs get scored, then sorted highest to lowest. The top `k` results (defaul
 
 ---
 
+## Data Flow
+
+```mermaid
+flowchart TD
+    A[User Preference Profile\ngenre · mood · energy] --> B[Load songs.csv\n21 songs as dicts]
+    B --> C{For each song}
+    C --> D[score_song\nMood match +2.0\nGenre match +0.75\nEnergy closeness up to +2.0]
+    D --> E[Song gets a numeric score\nplus list of reasons]
+    E --> C
+    C --> F[Sort all scored songs\nhighest score first]
+    F --> G[Return top-k results\nwith title · score · why]
+```
+
+---
+
 ## Sample Output
 
-![Terminal output showing recommendations](terminal_output.png)
+### High-Energy Pop profile
+![High-Energy Pop recommendations](Screenshot%202026-04-13%20at%2010.07.50%20PM.png)
+
+### Chill Lofi profile
+![Chill Lofi recommendations](Screenshot%202026-04-13%20at%2010.08.02%20PM.png)
+
+### Deep Intense Rock profile
+![Deep Intense Rock recommendations](Screenshot%202026-04-13%20at%2010.08.08%20PM.png)
+
+### Adversarial — Conflicting Energy+Mood profile
+![Conflicting Energy Mood recommendations](Screenshot%202026-04-13%20at%2010.08.15%20PM.png)
+
+### Adversarial — Unknown Genre (country) profile
+![Unknown Genre recommendations](Screenshot%202026-04-13%20at%2010.08.23%20PM.png)
+
+### Adversarial — Extreme Low Energy profile
+![Extreme Low Energy recommendations](Screenshot%202026-04-13%20at%2010.08.28%20PM.png)
 
 ---
 
@@ -96,25 +127,25 @@ You can add more tests in `tests/test_recommender.py`.
 
 ## Experiments You Tried
 
-Use this section to document the experiments you ran. For example:
+**Weight shift — genre halved, mood doubled:**
+I started with genre at +2.0 and mood at +1.0, then swapped: mood to +2.0 and genre to +0.75. The effect was immediate — Gym Hero (pop, *intense*, energy 0.93) dropped out of the top-3 for the High-Energy Pop user because the mood mismatch ("intense" vs "happy") now cost more points than the genre match gained. This made the results feel more musically accurate.
 
-- What happened when you changed the weight on genre from 2.0 to 0.5
-- What happened when you added tempo or valence to the score
-- How did your system behave for different types of users
+**Energy ceiling vs energy proximity:**
+The original draft awarded energy points only when the song was *above* the user's target. Switching to `1 - |diff|` (proximity) instead meant low-energy songs also score well for low-energy users — and Spacewalk Thoughts correctly rose to #1 for the Extreme Low Energy profile instead of always losing to high-energy tracks.
+
+**Adversarial profiles:**
+Three edge-case profiles were tested: a conflicting energy+mood user (lofi+chill but energy 0.9), a user whose genre (country) doesn't exist in the catalog, and a zero-energy user. Results: the conflicting profile exposes that the system can't detect contradictory preferences; the unknown-genre user is structurally penalized by 0.75 points on every song; the zero-energy profile worked without errors and returned the quietest songs correctly.
 
 ---
 
 ## Limitations and Risks
 
-Summarize some limitations of your recommender.
+- **Catalog gap = fairness gap.** Any genre not in `songs.csv` never earns a genre bonus (+0.75). Country fans, for example, were structurally disadvantaged in every test run — their best possible score was always 0.75 lower than pop fans with otherwise identical preferences. This is a data problem that becomes a fairness problem.
+- **Energy and mood are independent signals.** The system cannot detect that "chill + energy 0.9" is a contradiction. It scores mood and energy separately and adds the numbers, so a user who types conflicting preferences gets a confused playlist with no warning.
+- **`likes_acoustic` was ignored in the original implementation.** A field designed into the UserProfile was never wired into the scorer, which means any preference about acoustic vs. electronic sound was silently discarded.
+- **Small catalog amplifies every bias.** With only 10 (now 21) songs, one popular genre can dominate the top-5 for almost every profile. Expanding the dataset is the single highest-leverage improvement.
 
-Examples:
-
-- It only works on a tiny catalog
-- It does not understand lyrics or language
-- It might over favor one genre or mood
-
-You will go deeper on this in your model card.
+See `model_card.md` for a deeper analysis.
 
 ---
 
@@ -124,10 +155,11 @@ Read and complete `model_card.md`:
 
 [**Model Card**](model_card.md)
 
-Write 1 to 2 paragraphs here about what you learned:
+Building this recommender made it concrete how much a scoring formula is really just a set of encoded assumptions. Giving mood the highest weight felt intuitive — of course how you feel matters most — but the moment I tested the "chill lofi at energy 0.9" profile, the system returned a mix of quiet lofi and loud workout tracks and had no way to flag the contradiction. The formula just added up numbers. That gap between what the output *looks like* (a considered recommendation with reasons) and what it actually *is* (three numbers added together) is the most important thing I took away: explainability and correctness are not the same thing.
 
-- about how recommenders turn data into predictions
-- about where bias or unfairness could show up in systems like this
+Bias surprised me most at the data level, not the algorithm level. The scorer itself is neutral — it rewards matches. But because the starting catalog had no country, R&B, or hip-hop songs, those users were structurally penalized on every single query, not because of a bug, but because someone never added their music. Real recommenders at scale have the same problem: if the training data skews toward certain demographics or tastes, the model inherits that skew invisibly.
+
+See [reflection.md](reflection.md) for detailed profile-by-profile comparisons.
 
 
 ---

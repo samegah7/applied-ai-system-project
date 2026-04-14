@@ -38,13 +38,43 @@ class Recommender:
     def __init__(self, songs: List[Song]):
         self.songs = songs
 
+    def _score(self, user: UserProfile, song: Song) -> Tuple[float, List[str]]:
+        """Score a Song dataclass against a UserProfile and return (score, reasons)."""
+        score = 0.0
+        reasons = []
+
+        if song.mood == user.favorite_mood:
+            score += 2.0
+            reasons.append("mood match (+2.0)")
+
+        if song.genre == user.favorite_genre:
+            score += 0.75
+            reasons.append("genre match (+0.75)")
+
+        energy_diff = abs(user.target_energy - song.energy)
+        energy_score = round((1.0 - energy_diff) * 2.0, 2)
+        score += energy_score
+        reasons.append(f"energy closeness (+{energy_score})")
+
+        if user.likes_acoustic and song.acousticness >= 0.6:
+            score += 0.5
+            reasons.append("acoustic preference (+0.5)")
+        elif not user.likes_acoustic and song.acousticness < 0.4:
+            score += 0.5
+            reasons.append("non-acoustic preference (+0.5)")
+
+        return round(score, 2), reasons
+
     def recommend(self, user: UserProfile, k: int = 5) -> List[Song]:
-        # TODO: Implement recommendation logic
-        return self.songs[:k]
+        """Return the top-k songs sorted by descending score for the given user."""
+        scored = [(song, self._score(user, song)[0]) for song in self.songs]
+        scored.sort(key=lambda x: x[1], reverse=True)
+        return [song for song, _ in scored[:k]]
 
     def explain_recommendation(self, user: UserProfile, song: Song) -> str:
-        # TODO: Implement explanation logic
-        return "Explanation placeholder"
+        """Return a plain-language explanation of why this song was recommended."""
+        _, reasons = self._score(user, song)
+        return ", ".join(reasons) if reasons else "no strong match"
 
 def load_songs(csv_path: str) -> List[Dict]:
     """Read songs.csv and return a list of dicts with numeric fields cast to int/float."""
@@ -67,25 +97,25 @@ def load_songs(csv_path: str) -> List[Dict]:
     return songs
 
 def score_song(user_prefs: Dict, song: Dict) -> Tuple[float, List[str]]:
-    """Score a song against user prefs (+2 genre, +1.5 mood, +1 energy) and return (score, reasons)."""
+    """Score a song against user prefs (+2 mood, +0.75 genre, +2 energy) and return (score, reasons)."""
     score = 0.0
     reasons = []
 
-    # Genre match (+2.0)
-    if song.get("genre") == user_prefs.get("genre"):
-        score += 2.0
-        reasons.append(f"genre match (+2.0)")
-
-    # Mood match (+1.5)
+    # Mood match (+2.0) — highest weight: what you feel right now matters most
     if song.get("mood") == user_prefs.get("mood"):
-        score += 1.5
-        reasons.append(f"mood match (+1.5)")
+        score += 2.0
+        reasons.append(f"mood match (+2.0)")
 
-    # Energy closeness — award up to +1.0 based on proximity
+    # Genre match (+0.75) — halved weight: genre is a weaker signal in this experiment
+    if song.get("genre") == user_prefs.get("genre"):
+        score += 0.75
+        reasons.append(f"genre match (+0.75)")
+
+    # Energy closeness — award up to +2.0 based on proximity (multiplier doubled)
     user_energy = user_prefs.get("energy")
     if user_energy is not None:
         energy_diff = abs(user_energy - song["energy"])
-        energy_score = round((1.0 - energy_diff) * 1.0, 2)
+        energy_score = round((1.0 - energy_diff) * 2.0, 2)
         score += energy_score
         reasons.append(f"energy closeness (+{energy_score})")
 
