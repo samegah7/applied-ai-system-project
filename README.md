@@ -71,22 +71,22 @@ flowchart TD
 ## Sample Output
 
 ### High-Energy Pop profile
-![High-Energy Pop recommendations](Screenshot%202026-04-13%20at%2010.07.50%20PM.png)
+![High-Energy Pop recommendations](output_high_energy_pop.png)
 
 ### Chill Lofi profile
-![Chill Lofi recommendations](Screenshot%202026-04-13%20at%2010.08.02%20PM.png)
+![Chill Lofi recommendations](output_chill_lofi.png)
 
 ### Deep Intense Rock profile
-![Deep Intense Rock recommendations](Screenshot%202026-04-13%20at%2010.08.08%20PM.png)
+![Deep Intense Rock recommendations](output_deep_intense_rock.png)
 
 ### Adversarial — Conflicting Energy+Mood profile
-![Conflicting Energy Mood recommendations](Screenshot%202026-04-13%20at%2010.08.15%20PM.png)
+![Conflicting Energy Mood recommendations](output_conflicting_energy_mood.png)
 
 ### Adversarial — Unknown Genre (country) profile
-![Unknown Genre recommendations](Screenshot%202026-04-13%20at%2010.08.23%20PM.png)
+![Unknown Genre recommendations](output_unknown_genre.png)
 
 ### Adversarial — Extreme Low Energy profile
-![Extreme Low Energy recommendations](Screenshot%202026-04-13%20at%2010.08.28%20PM.png)
+![Extreme Low Energy recommendations](output_extreme_low_energy.png)
 
 ---
 
