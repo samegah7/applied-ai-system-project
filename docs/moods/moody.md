@@ -1,0 +1,7 @@
+Moody describes an introspective, emotionally complex state — neither purely happy nor purely sad, but sitting in the tension between the two. Moody music is atmospheric, often minor-key, and rewards attentive listening. It doesn't demand high energy or resolution; instead it lingers in feeling. Think late-night, overcast afternoons, or the hour before a storm.
+
+Moody music is characterized by minor or ambiguous harmonies, slower tempos, emotional vocal delivery, and production that feels spacious or even haunted. Genres with strong moody subsets include R&B, indie pop, jazz, and synthwave. The unifying quality is emotional depth over surface brightness.
+
+Energy expectations: moody mood is compatible with a wide energy range (0.2–0.75), but it skews toward low-to-mid energy. Very high energy (0.9+) rarely pairs well with moodiness — at that level, the music tends to tip into intensity rather than introspection. Very low energy (0.1–0.2) moody music approaches ambient territory.
+
+When recommending for a moody mood, emotional texture matters more than raw energy. A song can score well on energy match but feel completely wrong if it's too bright, too upbeat, or too straightforward harmonically. Prioritize songs with atmospheric production, minor-key undertones, or a sense of emotional complexity. The best moody recommendations leave the listener in a thoughtful state rather than a pumped-up or cheerful one.

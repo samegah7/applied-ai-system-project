@@ -1,0 +1,7 @@
+Focused describes a state of deliberate, sustained cognitive engagement — the mood for deep work, studying, coding, writing, or any task that requires sustained concentration. Focused music is not about energy or emotion; it's about cognitive scaffolding. The ideal focused track holds steady, doesn't pull attention, and reinforces a sense of productive flow.
+
+Focused music tends to avoid lyrics (which compete for language-processing bandwidth), dramatic dynamic changes, and surprising rhythmic shifts. Instrumental music dominates: lo-fi hip-hop, ambient, electronic, classical, and synthwave all have strong focused subsets. Consistent tempo and harmonic simplicity are key qualities.
+
+Energy expectations: focused mood is compatible with a moderate energy range (0.25–0.65). Very low energy (below 0.2) risks inducing drowsiness; very high energy (above 0.75) introduces the adrenaline and distraction that work against sustained focus. The sweet spot for most focused listening is 0.3–0.55.
+
+When recommending for a focused mood, prioritize consistency over excitement. The best focused track is one the listener will barely notice after 10 minutes — it provides just enough sonic stimulation to prevent restlessness without demanding attention. Avoid recommending songs that have exciting drops, lyrical hooks that demand listening, or sudden dynamic contrasts. A recommendation that sounds "boring" in isolation might be exactly right for focus.
