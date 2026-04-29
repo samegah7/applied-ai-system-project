@@ -135,7 +135,10 @@ cp .env.example .env
 export $(cat .env | xargs)       # Mac / Linux
 # Windows: set ANTHROPIC_API_KEY=your_key_here
 
-# 6. Run the recommender
+# 6. Run the web UI (recommended)
+streamlit run app.py
+
+# Or run the CLI version
 python3 -m src.main
 
 # 7. Run the tests
