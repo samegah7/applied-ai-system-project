@@ -63,8 +63,9 @@ with st.spinner("Retrieving songs and generating recommendation…"):
         )
     except EnvironmentError:
         st.error(
-            "**ANTHROPIC_API_KEY is not set.**\n\n"
-            "Run `export ANTHROPIC_API_KEY=your_key` in the terminal, then restart Streamlit."
+            "**GEMINI_API_KEY is not set.**\n\n"
+            "Get a free key at https://aistudio.google.com, then run "
+            "`export GEMINI_API_KEY=your_key` in the terminal and restart Streamlit."
         )
         st.stop()
 

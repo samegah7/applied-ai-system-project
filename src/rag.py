@@ -1,57 +1,26 @@
 """
 RAG pipeline: retrieve genre/mood docs + retrieved songs, then generate
-a grounded recommendation with the Claude API.
+a grounded recommendation with the Gemini API.
 
 Retrieval layer 1 — scoring algorithm in recommender.py (top-k songs)
 Retrieval layer 2 — local docs/ folder (genre and mood context)
-Generation layer  — Claude API, with prompt caching on static instructions
+Generation layer  — Gemini API (gemini-2.0-flash)
 """
 
 import os
 from pathlib import Path
 from typing import Optional
 
-import anthropic
+from google import genai
+from google.genai import types
 
 from .logger import logger
 
 _DOCS_DIR = Path(__file__).parent.parent / "docs"
-_MODEL = "claude-sonnet-4-6"
+_MODEL = "gemini-2.0-flash"
 _MAX_TOKENS = 350
 
-# Cached at module level so the client is reused across calls
-_client: Optional[anthropic.Anthropic] = None
-
-
-def _get_client() -> anthropic.Anthropic:
-    global _client
-    if _client is None:
-        api_key = os.environ.get("ANTHROPIC_API_KEY")
-        if not api_key:
-            raise EnvironmentError(
-                "ANTHROPIC_API_KEY is not set. "
-                "Copy .env.example to .env and add your key, "
-                "then run: export ANTHROPIC_API_KEY=your_key"
-            )
-        _client = anthropic.Anthropic(api_key=api_key)
-    return _client
-
-
-def _load_doc(category: str, name: str) -> Optional[str]:
-    filename = (
-        name.lower()
-        .replace(" ", "_")
-        .replace("&", "_and_")
-        .replace("-", "_")
-    )
-    path = _DOCS_DIR / category / f"{filename}.md"
-    if path.exists():
-        content = path.read_text(encoding="utf-8").strip()
-        logger.debug(f"Loaded doc: {path.name}")
-        return content
-    logger.warning(f"No doc found for {category}/{name!r} — continuing without it")
-    return None
-
+_client: Optional[genai.Client] = None
 
 _BASE_INSTRUCTIONS = """\
 You are a music recommendation assistant built into an educational project.
@@ -77,6 +46,36 @@ plain language the user would find helpful.
 """
 
 
+def _get_client() -> genai.Client:
+    global _client
+    if _client is None:
+        api_key = os.environ.get("GEMINI_API_KEY")
+        if not api_key:
+            raise EnvironmentError(
+                "GEMINI_API_KEY is not set. "
+                "Get a free key at https://aistudio.google.com, "
+                "then run: export GEMINI_API_KEY=your_key"
+            )
+        _client = genai.Client(api_key=api_key)
+    return _client
+
+
+def _load_doc(category: str, name: str) -> Optional[str]:
+    filename = (
+        name.lower()
+        .replace(" ", "_")
+        .replace("&", "_and_")
+        .replace("-", "_")
+    )
+    path = _DOCS_DIR / category / f"{filename}.md"
+    if path.exists():
+        content = path.read_text(encoding="utf-8").strip()
+        logger.debug(f"Loaded doc: {path.name}")
+        return content
+    logger.warning(f"No doc found for {category}/{name!r} — continuing without it")
+    return None
+
+
 def generate_recommendation(
     user_prefs: dict,
     retrieved_songs: list[dict],
@@ -86,8 +85,8 @@ def generate_recommendation(
     Full RAG pipeline:
       1. Retrieve genre + mood docs (external knowledge)
       2. Build a grounded prompt (retrieved songs + docs + user profile)
-      3. Generate with Claude (with prompt caching on static instructions)
-      4. Return Claude's response string; fall back to template on API error
+      3. Generate with Gemini API
+      4. Return the response string; fall back to template on API error
     """
     genre = user_prefs.get("genre", "")
     mood = user_prefs.get("mood", "")
@@ -106,36 +105,27 @@ def generate_recommendation(
 
     try:
         client = _get_client()
-        response = client.messages.create(
+        response = client.models.generate_content(
             model=_MODEL,
-            max_tokens=_MAX_TOKENS,
-            system=[
-                {
-                    "type": "text",
-                    "text": _BASE_INSTRUCTIONS,
-                    # Cache the static instructions — hits on every subsequent call
-                    "cache_control": {"type": "ephemeral"},
-                }
-            ],
-            messages=[{"role": "user", "content": user_message}],
+            contents=user_message,
+            config=types.GenerateContentConfig(
+                system_instruction=_BASE_INSTRUCTIONS,
+                max_output_tokens=_MAX_TOKENS,
+            ),
         )
-        result = response.content[0].text.strip()
-        usage = response.usage
+        result = response.text.strip()
+        usage = response.usage_metadata
         logger.info(
-            f"[{profile_name}] Claude response OK "
-            f"(in={usage.input_tokens}, out={usage.output_tokens}, "
-            f"cache_read={getattr(usage, 'cache_read_input_tokens', 0)})"
+            f"[{profile_name}] Gemini response OK "
+            f"(in={usage.prompt_token_count}, out={usage.candidates_token_count})"
         )
         return result
 
     except EnvironmentError as exc:
         logger.error(str(exc))
         raise
-    except anthropic.APIError as exc:
-        logger.error(f"[{profile_name}] Claude API error: {exc} — using fallback output")
-        return _template_fallback(retrieved_songs)
     except Exception as exc:
-        logger.error(f"[{profile_name}] Unexpected error: {exc} — using fallback output")
+        logger.error(f"[{profile_name}] Gemini API error: {exc} — using fallback output")
         return _template_fallback(retrieved_songs)
 
 

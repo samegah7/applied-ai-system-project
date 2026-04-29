@@ -1,6 +1,6 @@
 # MoodMatch: AI Music Recommender
 
-A content-based music recommendation system that combines a rule-based scoring engine with a RAG (Retrieval-Augmented Generation) pipeline powered by the Claude API. The system retrieves relevant songs and contextual knowledge, generates a natural-language recommendation grounded in that data, and automatically validates every response before it reaches the user.
+A content-based music recommendation system that combines a rule-based scoring engine with a RAG (Retrieval-Augmented Generation) pipeline powered by the Gemini API. The system retrieves relevant songs and contextual knowledge, generates a natural-language recommendation grounded in that data, and automatically validates every response before it reaches the user.
 
 **GitHub:** [samegah7/applied-ai-system-project](https://github.com/samegah7/applied-ai-system-project)
 
@@ -24,9 +24,9 @@ The video shows 3 input profiles running end-to-end: a clean happy-path result, 
 
 MoodMatch 2.0 upgrades the original by adding three things that make it a real AI system rather than just a scoring script:
 
-1. **RAG pipeline:** a second retrieval layer pulls in genre and mood context documents from a local knowledge base, and Claude uses both the retrieved songs *and* those documents to write a grounded recommendation paragraph. The output is natural language that explains trade-offs, flags conflicts, and references specific songs rather than a formatted score dump.
+1. **RAG pipeline:** a second retrieval layer pulls in genre and mood context documents from a local knowledge base, and Gemini uses both the retrieved songs *and* those documents to write a grounded recommendation paragraph. The output is natural language that explains trade-offs, flags conflicts, and references specific songs rather than a formatted score dump.
 
-2. **Automated validation:** every AI response is checked automatically. Did Claude only mention songs it was actually given? Did it invent any titles? Is the response a reasonable length? This runs on every profile, every time.
+2. **Automated validation:** every AI response is checked automatically. Did Gemini only mention songs it was actually given? Did it invent any titles? Is the response a reasonable length? This runs on every profile, every time.
 
 3. **Structured logging:** every step of the pipeline (retrieval, API call, token counts, cache hits, validation results) is written to a log file, giving a full audit trail without re-running the system.
 
@@ -52,12 +52,12 @@ flowchart TD
     end
 
     subgraph GEN ["Generation"]
-        LLM["Claude API\nclaude-sonnet-4-6\nPrompt caching on base instructions\nGrounds response in retrieved data"]
+        LLM["Gemini API\ngemini-2.0-flash\nGrounds response in retrieved data"]
     end
 
     subgraph VAL ["Automated Validation | validator.py"]
-        V1["Grounding check\nDid Claude mention retrieved songs?"]
-        V2["Hallucination check\nDid Claude invent song titles?"]
+        V1["Grounding check\nDid Gemini mention retrieved songs?"]
+        V2["Hallucination check\nDid Gemini invent song titles?"]
         V3["Length check\n20-300 words?"]
     end
 
@@ -67,7 +67,7 @@ flowchart TD
     end
 
     subgraph OUT ["Output"]
-        O1["AI Recommendation\nprimary output: Claude's paragraph"]
+        O1["AI Recommendation\nprimary output: Gemini's paragraph"]
         O2["Scoring Breakdown\ntransparency: how retrieval ranked songs"]
         O3["Validation Report\nPASSED / FAILED + specific issues"]
     end
@@ -100,11 +100,11 @@ flowchart TD
 
 **Layer 1, Scoring (retriever):** `recommender.py` scores every song against the user profile using a weighted formula: mood match (+2.0), genre match (+0.75), energy proximity (up to +2.0), and acoustic preference (+0.5). The top 5 become the retrieved context.
 
-**Layer 2, Docs (retriever):** `rag.py` loads a short markdown document for the user's preferred genre and another for their mood from `docs/`. These give Claude context about what makes a genre or mood distinctive, which isn't captured in the song data itself.
+**Layer 2, Docs (retriever):** `rag.py` loads a short markdown document for the user's preferred genre and another for their mood from `docs/`. These give Gemini context about what makes a genre or mood distinctive, which isn't captured in the song data itself.
 
-**Generator:** Claude receives the user profile, the top-5 scored songs, and the docs, then writes a natural recommendation paragraph. The base system instructions are prompt-cached so repeated calls are faster and cheaper. Claude falls back to a template output if the API is unavailable.
+**Generator:** Gemini receives the user profile, the top-5 scored songs, and the docs, then writes a natural recommendation paragraph. The system falls back to a template output if the API is unavailable.
 
-**Validator:** `validator.py` automatically checks every response for grounding (did Claude mention retrieved songs?), hallucination (did Claude invent titles not in the retrieved set?), and length sanity (20-300 words). Results are printed inline and logged.
+**Validator:** `validator.py` automatically checks every response for grounding (did Gemini mention retrieved songs?), hallucination (did Gemini invent titles not in the retrieved set?), and length sanity (20-300 words). Results are printed inline and logged.
 
 **Logger:** `logger.py` writes INFO-level events to the console and a full DEBUG trace (including token counts and cache hits) to `logs/recommender.log`.
 
@@ -112,7 +112,7 @@ flowchart TD
 
 ## Setup Instructions
 
-**Prerequisites:** Python 3.10+, an [Anthropic API key](https://console.anthropic.com/)
+**Prerequisites:** Python 3.10+, a free [Gemini API key](https://aistudio.google.com)
 
 ```bash
 # 1. Clone the repository
@@ -129,11 +129,11 @@ pip install -r requirements.txt
 
 # 4. Add your API key
 cp .env.example .env
-# Open .env and replace "your_api_key_here" with your actual key
+# Open .env and replace "your_api_key_here" with your Gemini key
 
 # 5. Load the key into your shell
 export $(cat .env | xargs)       # Mac / Linux
-# Windows: set ANTHROPIC_API_KEY=your_key_here
+# Windows: set GEMINI_API_KEY=your_key_here
 
 # 6. Run the web UI (recommended)
 streamlit run app.py
@@ -185,7 +185,7 @@ genre=lofi   mood=chill   energy=0.35
      energy closeness (+1.96)
 ```
 
-**AI Recommendation (Claude):**
+**AI Recommendation (Gemini):**
 > Your chill lo-fi profile is one of the clearest matches in the catalog. Library Rain and Midnight Coding are nearly perfect fits. Both carry that warm, slightly muffled lo-fi texture designed to fade into the background, and their energy levels (0.35 and 0.42) land right where you want them. Spacewalk Thoughts is worth including even though it's ambient rather than lo-fi; at 0.28 energy it's even quieter, and the chill mood carries over naturally. Focus Flow stays in the lo-fi family but tilts toward productive concentration rather than pure unwind, so it's good if you're working. Coffee Shop Stories rounds things out with a jazz warmth that pairs well with the same quiet, unhurried headspace.
 
 **Validation:** `PASSED  |  songs mentioned: Library Rain, Midnight Coding, Spacewalk Thoughts, Focus Flow, Coffee Shop Stories`
@@ -224,7 +224,7 @@ genre=rock   mood=intense   energy=0.92
      energy closeness (+1.84)
 ```
 
-**AI Recommendation (Claude):**
+**AI Recommendation (Gemini):**
 > Storm Runner is the clear #1 here. It's the only rock song in the catalog and it delivers everything you asked for: rock genre, intense mood, and energy at 0.91, almost identical to your target of 0.92. After that, the list crosses genre lines because the catalog only has one rock song. Gym Hero is a pop workout track that matches your energy and intensity nearly perfectly at 0.93. It belongs in a gym playlist, not a rock one, but the signals overlap. Grind Season and Drop Zone bring the same high-energy intensity from hip-hop and EDM respectively. If rock is non-negotiable, Storm Runner is your song; the rest are the best energy-and-mood matches the catalog can offer without it.
 
 **Validation:** `PASSED  |  songs mentioned: Storm Runner, Gym Hero, Grind Season, Drop Zone`
@@ -264,7 +264,7 @@ genre=lofi   mood=chill   energy=0.9
      mood match (+2.0), energy closeness (+0.76)
 ```
 
-**AI Recommendation (Claude):**
+**AI Recommendation (Gemini):**
 > There's a real tension in this profile worth naming: lo-fi and chill are inherently low-energy styles (that's the genre's whole identity), but your energy target of 0.9 is workout-track territory. The scoring system can't resolve that contradiction; it treats mood and energy as independent signals and adds them up, so what you get is the low-energy lo-fi songs ranking first because their mood and genre alignment outweighs the energy mismatch. Midnight Coding and Library Rain top the list not because they deliver 0.9 energy (they don't; they're at 0.42 and 0.35) but because their lo-fi chill credentials are the strongest in the catalog. If you genuinely want high-energy music, you'd be better served by setting mood to intense or happy. If you want lo-fi, drop your energy target below 0.5 and you'll get a much cleaner result.
 
 **Validation:** `PASSED  |  songs mentioned: Midnight Coding, Library Rain`
@@ -276,19 +276,19 @@ genre=lofi   mood=chill   energy=0.9
 ## Design Decisions
 
 **Why RAG instead of a fine-tuned model or agentic workflow?**
-RAG was the natural fit because the scoring algorithm I already had *is* a retrieval step. The gap between the old system and RAG was one layer: replacing a template output with a Claude response grounded in the retrieved data. A fine-tuned model would require training data I don't have. An agentic workflow would add looping complexity without a clear benefit for a single-pass recommendation task.
+RAG was the natural fit because the scoring algorithm I already had *is* a retrieval step. The gap between the old system and RAG was one layer: replacing a template output with a Gemini response grounded in the retrieved data. A fine-tuned model would require training data I don't have. An agentic workflow would add looping complexity without a clear benefit for a single-pass recommendation task.
 
 **Why keep the scoring algorithm as the retrieval layer instead of embeddings?**
 The scoring formula is transparent. I can explain exactly why Library Rain ranks above Midnight Coding. Embedding-based retrieval would use cosine similarity across a vector space I couldn't inspect or explain, which would undercut one of the project's core goals: making the recommendation process legible. Transparency mattered more than semantic sophistication at this scale.
 
 **Why two retrieval layers?**
-The song catalog gives Claude what to recommend. The docs give Claude why those songs fit a particular genre or mood in terms a human would find meaningful. Without the docs, Claude could only say "this song has a chill mood label," but with them, it can say "lo-fi is designed to fade into the background, and Library Rain delivers that." The two sources serve different purposes.
+The song catalog gives Gemini what to recommend. The docs give Gemini why those songs fit a particular genre or mood in terms a human would find meaningful. Without the docs, Gemini could only say "this song has a chill mood label," but with them, it can say "lo-fi is designed to fade into the background, and Library Rain delivers that." The two sources serve different purposes.
 
-**Why validate automatically instead of just trusting Claude?**
-The model card reflection put it clearly: *"generated explanations sounded confident and readable, but I had to verify manually that the numbers matched what the code actually computed."* That's the problem automated validation solves. The grounding check catches cases where Claude ignores retrieved songs; the hallucination check catches cases where Claude invents songs that don't exist. Neither error is frequent, but both are invisible without checking.
+**Why validate automatically instead of just trusting the model?**
+The model card reflection put it clearly: *"generated explanations sounded confident and readable, but I had to verify manually that the numbers matched what the code actually computed."* That's the problem automated validation solves. The grounding check catches cases where Gemini ignores retrieved songs; the hallucination check catches cases where Gemini invents songs that don't exist. Neither error is frequent, but both are invisible without checking.
 
 **Trade-offs made:**
-- Using `claude-sonnet-4-6` costs more per call than Haiku, but produces noticeably better explanations for the adversarial profiles, especially when flagging contradictions.
+- Using `gemini-2.0-flash` gives a strong balance of quality and speed, and is available on Google AI Studio's free tier.
 - The hallucination check uses quoted-string pattern matching, which can produce false positives on phrases that happen to be quoted. A more robust approach would use NLP entity extraction, but that would add a heavy dependency for marginal gain at this catalog size.
 - Prompt caching is applied to the static base instructions, not the genre/mood docs (which change per profile). On a single sequential run the cache hit rate is low; it pays off when the same profile is called multiple times in the same session.
 
@@ -313,7 +313,7 @@ The grounding check correctly passes when a retrieved song title appears in the 
 Confirmed that known genre and mood docs resolve to non-empty strings, and that an unknown genre ("metal") returns None without crashing, triggering the fallback path in the RAG pipeline.
 
 **What the adversarial profiles exposed:**
-The conflicting energy+mood profile (lofi + chill + energy 0.9) passed all three validation checks with a confidence score of 1.0, because Claude mentioned real songs and wrote a proper-length response. But the recommendation text itself flagged the contradiction. This is the key lesson: automated checks measure structure, not reasoning quality. A 1.0 confidence score means the response is well-formed, not that it is correct. Human review of the output text is still the only way to catch reasoning failures.
+The conflicting energy+mood profile (lofi + chill + energy 0.9) passed all three validation checks with a confidence score of 1.0, because Gemini mentioned real songs and wrote a proper-length response. But the recommendation text itself flagged the contradiction. This is the key lesson: automated checks measure structure, not reasoning quality. A 1.0 confidence score means the response is well-formed, not that it is correct. Human review of the output text is still the only way to catch reasoning failures.
 
 **What didn't work as expected:**
 The consistency checker uses Jaccard word overlap between two runs of the same profile. In practice, LLM output varies in phrasing even when the recommended songs are identical, which drops the score even when the substance is the same. A more reliable consistency check would compare the set of song titles mentioned across runs rather than the full response vocabulary.
@@ -332,7 +332,7 @@ Beyond the data, the system has a logic limitation: it cannot detect contradicto
 
 A music recommender seems harmless, but the design has risks at scale. If a record label or streaming service controlled the catalog, they could pad it with their own artists and the scoring algorithm would surface them more often simply because they appear in more genre and mood categories. The recommendations would look organic but be structurally biased toward whoever controls the data. The fix is transparency: publishing the catalog, the scoring weights, and the retrieval logic so that the bias is visible and auditable rather than hidden inside a black box.
 
-The RAG layer adds a subtler risk. The genre and mood context documents I wrote shape how Claude explains recommendations. If those documents were written to favor certain aesthetics or to describe some genres more positively than others, Claude's output would reflect that framing. Right now I wrote all 17 docs myself and can review them, but at scale, whoever writes or curates the knowledge base shapes what the AI says about entire genres and communities of listeners.
+The RAG layer adds a subtler risk. The genre and mood context documents I wrote shape how Gemini explains recommendations. If those documents were written to favor certain aesthetics or to describe some genres more positively than others, Gemini's output would reflect that framing. Right now I wrote all 17 docs myself and can review them, but at scale, whoever writes or curates the knowledge base shapes what the AI says about entire genres and communities of listeners.
 
 **What surprised you while testing the AI's reliability?**
 
@@ -340,7 +340,7 @@ The biggest surprise was that the confidence score and the adversarial profile b
 
 **Describe your collaboration with AI during this project. What was helpful, and what was flawed?**
 
-Claude was useful in two ways. First, it helped scaffold the data model and scoring function quickly, which let me spend more time on the harder question of what the weights should actually mean rather than how to write the code. Second, it suggested the adversarial test profiles, specifically the conflicting energy+mood case. I would not have thought to test a user who asks for "chill at energy 0.9" on my own. That suggestion exposed the most interesting limitation of the whole system: the formula cannot reason about contradictions.
+Gemini was useful in two ways. First, it helped scaffold the data model and scoring function quickly, which let me spend more time on the harder question of what the weights should actually mean rather than how to write the code. Second, it suggested the adversarial test profiles, specifically the conflicting energy+mood case. I would not have thought to test a user who asks for "chill at energy 0.9" on my own. That suggestion exposed the most interesting limitation of the whole system: the formula cannot reason about contradictions.
 
 The flawed suggestion was the Jaccard consistency checker in `validator.py`. The idea was that running the same profile twice and comparing word overlap would measure whether the AI gave stable answers. In practice, LLM output varies in phrasing even when the recommended songs are identical, so the score drops even when the substance has not changed at all. A consistency check based on word overlap measures writing style, not recommendation stability. I kept the function in the code but flagged it as unreliable in the testing summary. The lesson was that AI-generated metrics can sound rigorous without actually measuring what you think they measure, which is the same problem the project is fundamentally about.
 
@@ -350,11 +350,11 @@ The flawed suggestion was the Jaccard consistency checker in `validator.py`. The
 
 Building MoodMatch made two things concrete for me that I had only understood abstractly before.
 
-The first is that **explainability and correctness are different things.** The original scoring system produced neat explanations like "mood match (+2.0), energy closeness (+1.84)" that looked authoritative. But the conflicting profile showed that a formula can explain exactly what it did and still be wrong. Adding the Claude layer made this even sharper: Claude produces fluent, confident paragraphs that sound considered. I had to verify, manually and through validation, that the confidence was earned. The output looking right is not evidence that it is right.
+The first is that **explainability and correctness are different things.** The original scoring system produced neat explanations like "mood match (+2.0), energy closeness (+1.84)" that looked authoritative. But the conflicting profile showed that a formula can explain exactly what it did and still be wrong. Adding the Gemini layer made this even sharper: Gemini produces fluent, confident paragraphs that sound considered. I had to verify, manually and through validation, that the confidence was earned. The output looking right is not evidence that it is right.
 
 The second is that **bias lives in the data, not just the algorithm.** The scoring formula is neutral; it rewards matches and penalizes mismatches equally for every user. But the catalog I built from had no country, R&B, or hip-hop songs in its original form. That meant every user who preferred those genres was structurally penalized on every single query, not because of a bug, but because I never thought to include their music. When I expanded the catalog, the fairness problem partially resolved. The algorithm didn't change at all. That's the lesson: the most impactful place to address bias is often in the data collection step, before any model or formula is written.
 
-The RAG upgrade taught me something additional: retrieval quality sets a ceiling on generation quality. Claude can only be as grounded as the data it receives. If the scoring algorithm returns the wrong songs, or the docs are missing, Claude produces a less accurate response, not because Claude is wrong, but because it was given incomplete context. The system is a pipeline, and every stage's quality propagates forward. Getting retrieval right matters as much as getting generation right.
+The RAG upgrade taught me something additional: retrieval quality sets a ceiling on generation quality. Gemini can only be as grounded as the data it receives. If the scoring algorithm returns the wrong songs, or the docs are missing, Gemini produces a less accurate response, not because Gemini is wrong, but because it was given incomplete context. The system is a pipeline, and every stage's quality propagates forward. Getting retrieval right matters as much as getting generation right.
 
 ---
 
@@ -372,7 +372,7 @@ applied-ai-system-project/
 ├── src/
 │   ├── main.py                    # CLI runner, entry point
 │   ├── recommender.py             # Scoring algorithm + data model
-│   ├── rag.py                     # Doc retrieval + Claude API generation
+│   ├── rag.py                     # Doc retrieval + Gemini API generation
 │   ├── validator.py               # Automated response validation
 │   └── logger.py                  # Structured logging setup
 ├── tests/
@@ -394,7 +394,7 @@ Building MoodMatch showed me that I approach AI engineering as a systems problem
 ## Dependencies
 
 ```
-anthropic>=0.40.0    # Claude API client
+google-generativeai  # Gemini API client
 pandas               # Data handling
 pytest               # Test runner
 python-dotenv        # Environment variable loading
