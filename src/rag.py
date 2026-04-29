@@ -17,8 +17,8 @@ from google.genai import types
 from .logger import logger
 
 _DOCS_DIR = Path(__file__).parent.parent / "docs"
-_MODEL = "gemini-2.0-flash"
-_MAX_TOKENS = 350
+_MODEL = "gemini-2.5-flash"
+_MAX_TOKENS = 1024
 
 _client: Optional[genai.Client] = None
 
@@ -111,6 +111,7 @@ def generate_recommendation(
             config=types.GenerateContentConfig(
                 system_instruction=_BASE_INSTRUCTIONS,
                 max_output_tokens=_MAX_TOKENS,
+                thinking_config=types.ThinkingConfig(thinking_budget=0),
             ),
         )
         result = response.text.strip()
