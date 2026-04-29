@@ -8,7 +8,7 @@ A content-based music recommendation system that combines a rule-based scoring e
 
 ## Demo
 
-**Loom walkthrough:** [Watch the end-to-end demo](#) ← *replace with your Loom link after recording*
+**Loom walkthrough:** [Watch the end-to-end demo](https://www.loom.com/share/49c101d5ac7d44dd8aea87b80d6ae114)
 
 The video shows 3 input profiles running end-to-end: a clean happy-path result, a catalog-depth edge case, and an adversarial conflicting-preference profile. Each demonstrates the RAG pipeline, scoring breakdown, and automated validation output.
 
